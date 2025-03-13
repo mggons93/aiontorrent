@@ -4,6 +4,47 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit
 }
 
+# Script para verificar e instalar la última versión de DirectX
+
+# Función para verificar la versión de DirectX
+function Get-DirectXVersion {
+    $dxdiag = Start-Process -FilePath "dxdiag" -ArgumentList "/t dxdiag.txt" -Wait -PassThru
+    $dxdiagOutput = Get-Content -Path "dxdiag.txt"
+    $versionLine = $dxdiagOutput | Select-String -Pattern "DirectX Version"
+    $version = $versionLine -replace "DirectX Version: ", ""
+    Remove-Item -Path "dxdiag.txt"
+    return $version
+}
+
+# URL de descarga del instalador de DirectX
+$directxUrl = "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe"
+
+# Ruta donde se guardará el instalador
+$installerPath = "$env:TEMP\directx_installer.exe"
+
+# Verificar la versión de DirectX instalada
+$currentVersion = Get-DirectXVersion
+Write-Host "Versión actual de DirectX: $currentVersion"
+
+# Última versión de DirectX disponible
+$latestVersion = "DirectX 12"  # Actualiza esto según la última versión disponible
+
+# Comparar versiones y descargar e instalar si es necesario
+if ($currentVersion -ne $latestVersion) {
+    Write-Host "Actualizando a la última versión de DirectX..."
+    # Descargar el instalador
+    Invoke-WebRequest -Uri $directxUrl -OutFile $installerPath
+
+    # Ejecutar el instalador
+    Start-Process -FilePath $installerPath -ArgumentList "/silent" -Wait
+
+    # Eliminar el instalador después de la instalación
+    Remove-Item -Path $installerPath
+    Write-Host "DirectX actualizado a la última versión."
+} else {
+    Write-Host "Ya tienes la última versión de DirectX instalada."
+}
+
 # Definir rutas
 $aionFolder = "C:\Aion4.3"
 $aionBat = "$aionFolder\Aion.bat"
