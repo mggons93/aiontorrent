@@ -4,17 +4,10 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit
 }
 
-# Definir rutas
-$aionFolder = "C:\Aion4.3"
-$lnkFile = "$env:USERPROFILE\Desktop\Aion.lnk"
-
-# Si el acceso directo ya existe, omitir el script
-if (Test-Path $lnkFile) {
-    Write-Output "El acceso directo ya existe. No se requiere ninguna acción."
-    Exit
+# Verificar si winget está instalado
+function Test-Winget {
+    return Get-Command winget -ErrorAction SilentlyContinue
 }
-
-# Script para verificar e instalar la última versión de DirectX
 
 # Función para verificar la versión de DirectX
 function Get-DirectXVersion {
@@ -26,39 +19,38 @@ function Get-DirectXVersion {
     return $version
 }
 
-# URL de descarga del instalador de DirectX
-$directxUrl = "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe"
-
-# Ruta donde se guardará el instalador
-$installerPath = "$env:TEMP\directx_installer.exe"
-
 # Verificar la versión de DirectX instalada
 $currentVersion = Get-DirectXVersion
 Write-Host "Versión actual de DirectX: $currentVersion"
 
-# Última versión de DirectX disponible
-$latestVersion = "DirectX 12"  # Actualiza esto según la última versión disponible
+# Última versión de DirectX esperada
+$latestVersion = "DirectX 12"  # Ajustar si es necesario
 
-# Comparar versiones y descargar e instalar si es necesario
+# Si la versión es diferente y Winget está disponible, instalar DirectX con Winget
 if ($currentVersion -ne $latestVersion) {
-    Write-Host "Actualizando a la última versión de DirectX..."
-    # Descargar el instalador
-    Invoke-WebRequest -Uri $directxUrl -OutFile $installerPath
-
-    # Ejecutar el instalador
-    Start-Process -FilePath $installerPath -ArgumentList "/silent" -Wait
-
-    # Eliminar el instalador después de la instalación
-    Remove-Item -Path $installerPath
-    Write-Host "DirectX actualizado a la última versión."
+    if (Test-Winget) {
+        Write-Host "Winget detectado. Instalando DirectX..."
+        Start-Process -FilePath "winget" -ArgumentList "install Microsoft.DirectX" -Wait -NoNewWindow
+        Write-Host "DirectX instalado correctamente con Winget."
+    } else {
+        Write-Host "Winget no encontrado. Instalación manual no disponible en este momento."
+    }
 } else {
     Write-Host "Ya tienes la última versión de DirectX instalada."
 }
 
-# Definir más rutas
+# Definir rutas
+$aionFolder = "C:\Aion4.3"
 $aionBat = "$aionFolder\Aion.bat"
+$lnkFile = "$env:USERPROFILE\Desktop\Aion.lnk"
 $iconFile = "$aionFolder\AionClient.ico"
 $vbsFile = "$aionFolder\CrearAccesoDirecto.vbs"
+
+# Si el acceso directo ya existe, omitir la creación
+if (Test-Path $lnkFile) {
+    Write-Host "El acceso directo ya existe. Omitiendo su creación."
+    Exit
+}
 
 # Crear la carpeta si no existe
 if (-not (Test-Path $aionFolder)) {
@@ -81,7 +73,7 @@ start bin64\Aion.bin -ip:26.74.116.124 -port:2106 -cc:1 -lang:enu -noweb -nowebs
 exit
 "@ | Set-Content -Path $aionBat -Encoding ASCII
 
-# Crear el script VBS para el acceso directo con "Iniciar en: C:\Aion4.3"
+# Crear el script VBS para el acceso directo
 @"
 Set oWS = WScript.CreateObject("WScript.Shell")
 Set oLink = oWS.CreateShortcut("$lnkFile")
