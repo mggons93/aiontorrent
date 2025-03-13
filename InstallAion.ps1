@@ -4,6 +4,16 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit
 }
 
+# Definir rutas
+$aionFolder = "C:\Aion4.3"
+$lnkFile = "$env:USERPROFILE\Desktop\Aion.lnk"
+
+# Si el acceso directo ya existe, omitir el script
+if (Test-Path $lnkFile) {
+    Write-Output "El acceso directo ya existe. No se requiere ninguna acción."
+    Exit
+}
+
 # Script para verificar e instalar la última versión de DirectX
 
 # Función para verificar la versión de DirectX
@@ -45,10 +55,8 @@ if ($currentVersion -ne $latestVersion) {
     Write-Host "Ya tienes la última versión de DirectX instalada."
 }
 
-# Definir rutas
-$aionFolder = "C:\Aion4.3"
+# Definir más rutas
 $aionBat = "$aionFolder\Aion.bat"
-$lnkFile = "$env:USERPROFILE\Desktop\Aion.lnk"
 $iconFile = "$aionFolder\AionClient.ico"
 $vbsFile = "$aionFolder\CrearAccesoDirecto.vbs"
 
